@@ -7,6 +7,7 @@
 # external module
 from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.exceptions import RequestEntityTooLarge # for file limit except
 import contractions
 import unidecode
 from num2words import num2words
@@ -347,6 +348,9 @@ def processor():
         args.append(text_file)
         args.append(options)
 
+    except RequestEntityTooLarge as r:
+        print(r)
+        return jsonify({'error': 'The file size is too big!! It must be 200MB or less.'}), 413
     except Exception as e:
         return jsonify({'error': e}), 400
 
