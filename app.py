@@ -5,9 +5,9 @@
     update: 21.03.02
 '''
 # external module
-from flask import Flask, request, render_template, send_file, Response, make_response
+from flask import Flask, request, render_template, send_file
 from werkzeug.datastructures import ImmutableOrderedMultiDict
-from werkzeug.exceptions import RequestEntityTooLarge   # for file limit except
+from werkzeug.exceptions import RequestEntityTooLarge, BadRequestKeyError   # for file limit except
 from werkzeug.utils import secure_filename      # file extension check
 import contractions
 import unidecode
@@ -27,16 +27,21 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 
 app = Flask(__name__)
 
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024    # file upload limit 200mb
 ALLOWED_EXTENSIONS = {'txt'}
 
 requests_queue = Queue()
 BATCH_SIZE = 1
 CHECK_INTERVAL = 0.1
 
+DATA_FOLDER = './data'
 UPLOAD_FOLDER = './data/upload'
 RESULT_FOLDER = './data/result'
 
+
+# create folder
+if not os.path.isdir(DATA_FOLDER):
+    os.mkdir(DATA_FOLDER)
 
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
@@ -172,19 +177,6 @@ def word_replacer(text, word, new):
     return text
 
 
-##
-# Lemmatizer
-# ex) bats -> bat, doing -> do
-# But... got error...
-# => Hello, I got things -> Hello , I get thing
-# def lemmatizer(text):
-#     doc = nlp(text)
-
-#     lemmatized_sentence = " ".join(token.lemma_ for token in doc)
-
-#     return lemmatized_sentence
-
-
 def url_remover(text):
     result = re.sub(r"http\S+", "", text)
 
@@ -260,6 +252,8 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+##
+# text read and pre-processing
 def transform(file, options):
     filename = secure_filename(file.filename)
 
@@ -280,6 +274,7 @@ def transform(file, options):
                         option_name = option[0]
                         value = option[1]
                         value2 = option[2]
+
                         if option_name == "to_capitalize":
                             line = to_capitalize(line)
                         elif option_name == "to_lower":
@@ -300,8 +295,6 @@ def transform(file, options):
                             line = special_remover(line, value)
                         elif option_name == "special_replacer":
                             line = special_replacer(line, value, value2)
-                        # elif option_name == "lemmatizer":
-                        #     line = lemmatizer(line)
                         elif option_name == "space_normalizer":
                             line = space_normalizer(line)
                         elif option_name == "full_stop_normalizer":
@@ -324,7 +317,7 @@ def transform(file, options):
         print('Error occur in pre-processing!', e)
         os.remove(input_path)
         os.remove(result_path)
-        return {'error': e}, 500
+        return {'error': 'Error occur in pre-processing!'}, 500
 
     with open(result_path, 'rb') as r:
         data = r.read()
@@ -362,9 +355,11 @@ def processor():
 
     except RequestEntityTooLarge as r:
         print(r)
-        return {'error': 'The file size is too big!! It must be 200MB or less.'}, 413
+        return {'error': 'The file size is too big!! It must be less then 200MB.'}, 413
+    except BadRequestKeyError as b:
+        return {'error': 'Bad request error. Try again.'}, 400
     except Exception as e:
-        return {'error': e}, 400
+        return {'error': e}, 421
 
     req = {"input": args}
     requests_queue.put(req)
@@ -373,8 +368,6 @@ def processor():
         time.sleep(CHECK_INTERVAL)
 
     result = req['output']
-
-    print(result)
 
     if len(result) == 3:
         return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), result[2]
