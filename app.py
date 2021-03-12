@@ -185,7 +185,7 @@ def url_remover(text):
 
 ##
 # Reduce whitespace to one
-# ex) Hello,    guy -> Hello, guy
+# ex) Hello,    guy\n    I'm ready! -> Hello, guy I'm ready!
 def space_normalizer(text):
     result = " ".join(text.split())
 
@@ -193,6 +193,18 @@ def space_normalizer(text):
         return result
 
     return result + " "
+
+
+##
+# Reduce whitespace to one
+# ex) Hello,    guy\n    I'm ready! -> Hello, guy\nI'm ready!
+def space_normalizer_2(text):
+    result = " ".join(text.split())
+
+    if result == "":
+        return result
+
+    return result + "\n"
 
 
 ##
