@@ -8,13 +8,13 @@ RUN pip install num2words \
     Unidecode \
     contractions \
     flask \
-    emoji \
-    torch
+    emoji
+    # torch
 
 # spacy module and spacy model download
 RUN pip install -U pip setuptools wheel
-RUN pip install -U spacy
-RUN python -m spacy download en_core_web_sm
+# RUN pip install -U spacy
+# RUN python -m spacy download en_core_web_sm
 
 WORKDIR /app
 COPY . .
