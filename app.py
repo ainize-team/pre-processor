@@ -5,16 +5,16 @@
     update: 21.03.02
 '''
 # external module
-from flask import Flask, request, jsonify, render_template, send_file, Response
+from flask import Flask, request, render_template, send_file, Response, make_response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
-from werkzeug.exceptions import RequestEntityTooLarge # for file limit except
+from werkzeug.exceptions import RequestEntityTooLarge   # for file limit except
+from werkzeug.utils import secure_filename      # file extension check
 import contractions
 import unidecode
 from num2words import num2words
 import emoji
 
 # internal module
-from werkzeug.utils import secure_filename
 from threading import Thread
 from queue import Queue, Empty
 import time
@@ -28,6 +28,7 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
+ALLOWED_EXTENSIONS = {'txt'}
 
 requests_queue = Queue()
 BATCH_SIZE = 1
@@ -252,8 +253,19 @@ def html_tag_remover(text):
     return result
 
 
+##
+# file check
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 def transform(file, options):
     filename = secure_filename(file.filename)
+
+    if not allowed_file(filename):
+        return {'error': 'Please upload a text file.'}, 500
+
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
 
@@ -312,7 +324,7 @@ def transform(file, options):
         print('Error occur in pre-processing!', e)
         os.remove(input_path)
         os.remove(result_path)
-        return jsonify({'error': e}), 500
+        return {'error': e}, 500
 
     with open(result_path, 'rb') as r:
         data = r.read()
@@ -320,7 +332,7 @@ def transform(file, options):
     os.remove(input_path)
     os.remove(result_path)
 
-    return io.BytesIO(data), filename
+    return io.BytesIO(data), filename, 200
 
 
 def option_transform(options):
@@ -333,14 +345,11 @@ def option_transform(options):
 def processor():
     try:
         if requests_queue.qsize() > BATCH_SIZE:
-            return jsonify({'Error': 'Too Many Requests'}), 429
+            return {'Error': 'Too Many Requests'}, 429
 
         args = []
 
         text_file = request.files['text_file']
-
-        if os.path.splitext(text_file)[-1] == ".txt":
-            return jsonify({'error': 'Wrong extension type file'}), 400
 
         option_names = request.form.getlist('option')
         values = request.form.getlist('value')
@@ -353,9 +362,9 @@ def processor():
 
     except RequestEntityTooLarge as r:
         print(r)
-        return jsonify({'error': 'The file size is too big!! It must be 200MB or less.'}), 413
+        return {'error': 'The file size is too big!! It must be 200MB or less.'}, 413
     except Exception as e:
-        return jsonify({'error': e}), 400
+        return {'error': e}, 400
 
     req = {"input": args}
     requests_queue.put(req)
@@ -365,8 +374,10 @@ def processor():
 
     result = req['output']
 
-    if result:
-        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), 200
+    print(result)
+
+    if len(result) == 3:
+        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), result[2]
     else:
         return result
 
