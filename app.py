@@ -6,7 +6,7 @@
 '''
 # external module
 from flask import Flask, request, render_template, send_file
-from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.datastructures import ImmutableOrderedMultiDict       # 순서있는 리퀘스트 딕셔너리? 사용
 from werkzeug.exceptions import RequestEntityTooLarge, BadRequestKeyError   # for file limit except
 from werkzeug.utils import secure_filename      # file extension check
 import contractions
@@ -28,7 +28,7 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024    # file upload limit 200mb
-ALLOWED_EXTENSIONS = {'txt'}
+ALLOWED_EXTENSIONS = {'txt'}        # only support text file.
 
 requests_queue = Queue()
 BATCH_SIZE = 1
@@ -257,6 +257,7 @@ def allowed_file(filename):
 def transform(file, options):
     filename = secure_filename(file.filename)
 
+    # Only receive text file.
     if not allowed_file(filename):
         return {'error': 'Please upload a text file.'}, 500
 
