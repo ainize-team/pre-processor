@@ -339,6 +339,9 @@ def processor():
 
         text_file = request.files['text_file']
 
+        if os.path.splitext(text_file)[-1] == ".txt":
+            return jsonify({'error': 'Wrong extension type file'}), 400
+
         option_names = request.form.getlist('option')
         values = request.form.getlist('value')
         values2 = request.form.getlist('value2')
