@@ -38,7 +38,7 @@ This project pre-processor web server for NLP.
 
 ### Post parameter
 
-    text_file: Text file you want to pre-process.
+    text_file: Text file you want to pre-process. And only Text file.
     option: The pre-processing option.
     value: The value required by the specific option.
     value2: Second value required by specific option.
@@ -101,7 +101,7 @@ Sample data download: [GitHub](https://github.com/fpem123/pre-processor/blob/mas
     Oh.... you can't? sorry.
 
 
-### html_tag_remover
+#### html_tag_remover
 
 * input: option=html_tag_remover, value=whatever, value2=whatever
 
@@ -145,7 +145,7 @@ Sample data download: [GitHub](https://github.com/fpem123/pre-processor/blob/mas
     Oh.... you can't? sorry😢.
 
 
-### You can send multi option
+#### You can send multi option
 
 * input: option=html_tag_remover, value=whatever, value2=whatever, option=space_normalizer, value=whatever, value2=whatever
 
