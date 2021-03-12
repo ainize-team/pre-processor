@@ -9,9 +9,7 @@ from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
 import contractions
 import unidecode
-import spacy
 from num2words import num2words
-import torch    # GPU check
 import emoji
 
 # internal module
@@ -36,13 +34,6 @@ UPLOAD_FOLDER = './data/upload'
 RESULT_FOLDER = './data/result'
 
 
-if torch.cuda.is_available():   # gpu check
-    spacy.prefer_gpu()      # spacy run GPU
-
-
-nlp = spacy.load('en_core_web_sm')  # spacy model load
-nlp.max_length = 5000000    # spacy max size up
-
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
 
@@ -56,14 +47,16 @@ def handle_requests_by_batch():
 
         while not (len(request_batch) >= BATCH_SIZE):
             try:
-                request_batch.append(requests_queue.get(timeout=CHECK_INTERVAL))
+                request_batch.append(
+                    requests_queue.get(timeout=CHECK_INTERVAL))
             except Empty:
                 continue
 
             for requests in request_batch:
 
                 try:
-                    requests["output"] = transform(requests['input'][0], requests['input'][1])
+                    requests["output"] = transform(
+                        requests['input'][0], requests['input'][1])
                 except Exception as e:
                     requests["output"] = e
 
@@ -180,12 +173,12 @@ def word_replacer(text, word, new):
 # ex) bats -> bat, doing -> do
 # But... got error...
 # => Hello, I got things -> Hello , I get thing
-def lemmatizer(text):
-    doc = nlp(text)
+# def lemmatizer(text):
+#     doc = nlp(text)
 
-    lemmatized_sentence = " ".join(token.lemma_ for token in doc)
+#     lemmatized_sentence = " ".join(token.lemma_ for token in doc)
 
-    return lemmatized_sentence
+#     return lemmatized_sentence
 
 
 def url_remover(text):
@@ -210,7 +203,7 @@ def space_normalizer(text):
 # normalize full stop
 # ex) This is Kim; And me. -> This is Kim. And me.
 def full_stop_normalizer(text, stops):
-    text:str
+    text: str
     stops = '[' + stops + ']'
 
     result = re.sub(stops, ".", text)
@@ -222,7 +215,7 @@ def full_stop_normalizer(text, stops):
 # normalize comma
 # ex) This is Kim: and he is my son. -> This is Kim, and he is my son.
 def comma_normalizer(text, stops):
-    text:str
+    text: str
     stops = '[' + stops + ']'
 
     result = re.sub(stops, ",", text)
@@ -234,7 +227,7 @@ def comma_normalizer(text, stops):
 # Change number to same text.
 # ex) He is 3 years-old. -> He is three years-old.
 def number_to_text(text):
-    result = re.sub('\d+', lambda n: num2words(int(n.group())), text)
+    result = re.sub(r'\d+', lambda n: num2words(int(n.group())), text)
 
     return result
 
@@ -243,7 +236,7 @@ def number_to_text(text):
 # number to word
 # ex) if number == 1) He is 3 years-old. -> He is 1 years-old.
 def number_normalizer(text, number):
-    result = re.sub('\d+', number, text)
+    result = re.sub(r'\d+', number, text)
 
     return result
 
@@ -253,32 +246,25 @@ def number_normalizer(text, number):
 def html_tag_remover(text):
     cleaner = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
     result = re.sub(cleaner, '', text)
-
     return result
 
 
 def transform(file, options):
-    # 파일 저장
     filename = secure_filename(file.filename)
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
 
     result_path = os.path.join(RESULT_FOLDER, filename)
 
-
     try:
         with open(input_path, 'r', encoding='utf-8-sig') as f:
             lines = f.readlines()
-
             with open(result_path, 'w', encoding='utf-8') as r:
-
                 for line in lines:
-
                     for option in options:
                         option_name = option[0]
                         value = option[1]
                         value2 = option[2]
-
                         if option_name == "to_capitalize":
                             line = to_capitalize(line)
                         elif option_name == "to_lower":
@@ -299,8 +285,8 @@ def transform(file, options):
                             line = special_remover(line, value)
                         elif option_name == "special_replacer":
                             line = special_replacer(line, value, value2)
-                        elif option_name == "lemmatizer":
-                            line = lemmatizer(line)
+                        # elif option_name == "lemmatizer":
+                        #     line = lemmatizer(line)
                         elif option_name == "space_normalizer":
                             line = space_normalizer(line)
                         elif option_name == "full_stop_normalizer":
@@ -317,15 +303,12 @@ def transform(file, options):
                             line = html_tag_remover(line)
                         elif option_name == "url_remover":
                             line = url_remover(line)
-
                     r.write(line)
 
     except Exception as e:
         print('Error occur in pre-processing!', e)
-
         os.remove(input_path)
         os.remove(result_path)
-
         return jsonify({'error': e}), 500
 
     with open(result_path, 'rb') as r:
@@ -379,22 +362,16 @@ def processor():
         return result
 
 
-##
-# 샘플 다운로드 링크
 @app.route('/sample_download')
 def send_csv_sample():
-    return send_file('data/test.txt', mimetype='text/plain', attachment_filename='sample.txt'), 200
+    return send_file('sample/test.txt', mimetype='text/plain', attachment_filename='sample.txt'), 200
 
 
-##
-# Sever health checking page.
 @app.route('/healthz', methods=["GET"])
 def health_check():
     return "Health", 200
 
 
-##
-# Main page.
 @app.route('/')
 def main():
     return render_template('app.html'), 200
