@@ -26,6 +26,8 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 
 app = Flask(__name__)
 
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
+
 requests_queue = Queue()
 BATCH_SIZE = 1
 CHECK_INTERVAL = 0.1
