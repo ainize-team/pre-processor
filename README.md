@@ -12,7 +12,6 @@ This project pre-processor web server for NLP.
     contractions
     emoji
     flask
-    torch
 
 
 ### How to use
