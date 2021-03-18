@@ -256,7 +256,7 @@ def transform(file, options):
 
     # file extension check.
     if not text_extension.search(filename):
-        return jsonify({'error': 'Please upload a text file.'}), 400
+        return jsonify({'error': 'only .txt file is supported now.'}), 400
 
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
