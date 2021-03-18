@@ -26,7 +26,7 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 
 app = Flask(__name__)
 
-ALLOWED_EXTENSIONS = {'txt'}        # only support text file.
+text_extension = re.compile('\.txt$')
 
 requests_queue = Queue()
 BATCH_SIZE = 1
@@ -251,18 +251,11 @@ def html_tag_remover(text):
     return result
 
 
-##
-# file check
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 def transform(file, options):
     filename = secure_filename(file.filename)
 
-    # Only receive text file.
-    if not allowed_file(filename):
+    # file extension check.
+    if not text_extension.search(filename):
         return jsonify({'error': 'Please upload a text file.'}), 400
 
     input_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -331,7 +324,7 @@ def transform(file, options):
     os.remove(input_path)
     os.remove(result_path)
 
-    return io.BytesIO(data), filename
+    return io.BytesIO(data), filename, 200
 
 
 def option_transform(options):
@@ -370,8 +363,8 @@ def processor():
 
     result = req['output']
 
-    if result:
-        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), 200
+    if len(result) == 3:
+        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), result[2]
     else:
         return result
 
