@@ -263,7 +263,7 @@ def transform(file, options):
 
     # Only receive text file.
     if not allowed_file(filename):
-        return {'error': 'Please upload a text file.'}, 400
+        return jsonify({'error': 'Please upload a text file.'}), 400
 
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
