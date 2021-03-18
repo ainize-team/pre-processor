@@ -168,19 +168,6 @@ def word_replacer(text, word, new):
     return text
 
 
-##
-# Lemmatizer
-# ex) bats -> bat, doing -> do
-# But... got error...
-# => Hello, I got things -> Hello , I get thing
-# def lemmatizer(text):
-#     doc = nlp(text)
-
-#     lemmatized_sentence = " ".join(token.lemma_ for token in doc)
-
-#     return lemmatized_sentence
-
-
 def url_remover(text):
     result = re.sub(r"http\S+", "", text)
 
@@ -285,8 +272,6 @@ def transform(file, options):
                             line = special_remover(line, value)
                         elif option_name == "special_replacer":
                             line = special_replacer(line, value, value2)
-                        # elif option_name == "lemmatizer":
-                        #     line = lemmatizer(line)
                         elif option_name == "space_normalizer":
                             line = space_normalizer(line)
                         elif option_name == "full_stop_normalizer":
