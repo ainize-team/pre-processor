@@ -7,6 +7,7 @@
 # external module
 from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.exceptions import RequestEntityTooLarge   # file limit except
 import contractions
 import unidecode
 from num2words import num2words
@@ -26,13 +27,19 @@ Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 
 app = Flask(__name__)
 
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024    # file upload limit 200mb
+
 requests_queue = Queue()
 BATCH_SIZE = 1
 CHECK_INTERVAL = 0.1
 
+DATA_FOLDER = './data'
 UPLOAD_FOLDER = './data/upload'
 RESULT_FOLDER = './data/result'
 
+# create folder
+if not os.path.isdir(DATA_FOLDER):
+    os.mkdir(DATA_FOLDER)
 
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
@@ -345,6 +352,8 @@ def processor():
         args.append(text_file)
         args.append(options)
 
+    except RequestEntityTooLarge as r:
+        return jsonify({'error': 'The file size is too big!! It must be less than 200MB.'}), 413
     except Exception as e:
         return jsonify({'error': e}), 400
 
