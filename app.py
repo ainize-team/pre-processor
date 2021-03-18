@@ -7,6 +7,7 @@
 # external module
 from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.exceptions import BadRequestKeyError
 import contractions
 import unidecode
 from num2words import num2words
@@ -58,7 +59,7 @@ def handle_requests_by_batch():
                     requests["output"] = transform(
                         requests['input'][0], requests['input'][1])
                 except Exception as e:
-                    requests["output"] = e
+                    requests["output"] = jsonify({'error', 'error occur in queue'}), 500
 
 
 handler = Thread(target=handle_requests_by_batch).start()
@@ -317,7 +318,7 @@ def transform(file, options):
     os.remove(input_path)
     os.remove(result_path)
 
-    return io.BytesIO(data), filename
+    return io.BytesIO(data), filename, 200
 
 
 def option_transform(options):
@@ -345,8 +346,10 @@ def processor():
         args.append(text_file)
         args.append(options)
 
+    except BadRequestKeyError as b:
+        return jsonify({'error': 'Bad request error. Try again.'}), 400
     except Exception as e:
-        return jsonify({'error': e}), 400
+        return jsonify({'error': e}), 421
 
     req = {"input": args}
     requests_queue.put(req)
@@ -356,8 +359,8 @@ def processor():
 
     result = req['output']
 
-    if result:
-        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), 200
+    if len(result) == 3:
+        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), result[2]
     else:
         return result
 
