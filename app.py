@@ -7,6 +7,7 @@
 # external module
 from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.exceptions import BadRequestKeyError
 import contractions
 import unidecode
 from num2words import num2words
@@ -345,8 +346,10 @@ def processor():
         args.append(text_file)
         args.append(options)
 
+    except BadRequestKeyError as b:
+        return jsonify({'error': 'Bad request error. Try again.'}), 400
     except Exception as e:
-        return jsonify({'error': e}), 400
+        return jsonify({'error': e}), 421
 
     req = {"input": args}
     requests_queue.put(req)
