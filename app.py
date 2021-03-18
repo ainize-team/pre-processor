@@ -7,13 +7,13 @@
 # external module
 from flask import Flask, request, jsonify, render_template, send_file, Response
 from werkzeug.datastructures import ImmutableOrderedMultiDict
+from werkzeug.utils import secure_filename
 import contractions
 import unidecode
 from num2words import num2words
 import emoji
 
 # internal module
-from werkzeug.utils import secure_filename
 from threading import Thread
 from queue import Queue, Empty
 import time
@@ -25,6 +25,8 @@ import re
 Flask.request_class.parameter_storage_class = ImmutableOrderedMultiDict
 
 app = Flask(__name__)
+
+text_extension = re.compile('\.txt$')
 
 requests_queue = Queue()
 BATCH_SIZE = 1
@@ -251,6 +253,11 @@ def html_tag_remover(text):
 
 def transform(file, options):
     filename = secure_filename(file.filename)
+
+    # file extension check.
+    if not text_extension.search(filename):
+        return jsonify({'error': 'only .txt file is supported now.'}), 400
+
     input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
 
