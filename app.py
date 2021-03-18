@@ -124,7 +124,7 @@ def short_word_remover(text, size):
 ##
 # emoji remover
 def emoji_remover(text):
-    result = text.encode('ascii', 'ignore').decode('ascii')
+    result = re.sub(emoji.get_emoji_regexp(), r"", text)
 
     return result
 
