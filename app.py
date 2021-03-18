@@ -353,7 +353,7 @@ def processor():
         args.append(options)
 
     except RequestEntityTooLarge as r:
-        return jsonify({'error': 'The file size is too big!! It must be less then 200MB.'}), 413
+        return jsonify({'error': 'The file size is too big!! It must be less than 200MB.'}), 413
     except Exception as e:
         return jsonify({'error': e}), 400
 
