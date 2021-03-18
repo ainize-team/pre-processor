@@ -59,7 +59,7 @@ def handle_requests_by_batch():
                     requests["output"] = transform(
                         requests['input'][0], requests['input'][1])
                 except Exception as e:
-                    requests["output"] = e
+                    requests["output"] = jsonify({'error', 'error occur in queue'}), 500
 
 
 handler = Thread(target=handle_requests_by_batch).start()
