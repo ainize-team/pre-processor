@@ -324,7 +324,7 @@ def transform(file, options):
     os.remove(input_path)
     os.remove(result_path)
 
-    return io.BytesIO(data), filename
+    return io.BytesIO(data), filename, 200
 
 
 def option_transform(options):
@@ -363,8 +363,8 @@ def processor():
 
     result = req['output']
 
-    if result:
-        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), 200
+    if len(result) == 3:
+        return send_file(result[0], mimetype='text/plain', attachment_filename=result[1]), result[2]
     else:
         return result
 
